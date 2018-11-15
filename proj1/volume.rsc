@@ -28,7 +28,7 @@ int unitsize (src) {
 			countThisLine = false;
 		}
 		
-		if (startsWith(lines[i], "/*")) {
+		if (startsWith(lines[i], "/*")) { // TO DO: Find /* in middle of code.
 			countThisLine = false;
 			skippedLines = skipMultilineComment(lines, i);
 			nSrcLines -= skippedLines;
@@ -42,6 +42,7 @@ int unitsize (src) {
 	return nSrcLines;
 }
 
+// Count the lines of comment in a multiline comment. 
 int skipMultilineComment(lines, index) {	
 	lineCount = 0;
 	
@@ -53,7 +54,8 @@ int skipMultilineComment(lines, index) {
 	return lineCount;
 }
 
-str rateVolume(int kloc) {
+// Give rating to volume.
+str rateVolume(kloc) {
 	if (kloc < 67) {
 		return "++";
 	} else if (kloc < 247) {
@@ -68,6 +70,7 @@ str rateVolume(int kloc) {
 }
 
 // Compute all lines of code in .java files.
+// |project://JavaTest| 
 void main(folder) {
 	javaFiles = [ f | f <- find(folder, "java"), isFile(f) ];
 	int fileCount = size(javaFiles);
@@ -79,6 +82,5 @@ void main(folder) {
 	}
 	
 	println("Total volume: <volume> lines of code.");
-	println("Rating: <rateVolume(volume / 1000)>");
+	println("Volume Rating: <rateVolume(volume / 1000)>");
 }
-
