@@ -44,6 +44,18 @@ int customHash(list[str] lines) {
 	return hash;
 }
 
+int duplicationRank(real dupPct) {
+	if (dupPct <= 3.0)
+		return 4; // ++
+	if (dupPct <= 5.0)
+		return 3; // +
+	if (dupPct <= 10.0)
+		return 2; // o
+	if (dupPct <= 20.0)
+		return 1; // -
+	
+	return 0; // --
+}
 
 // Given a m3 java model, find all Java methods, and find percentage of duplicate code
 real calcDuplication(M3 myModel) {

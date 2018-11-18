@@ -147,3 +147,20 @@ list[real] calcUnitComp(M3 m3Model, javaFiles) {
 	
 	return categories;
 }
+
+int rateUnitComp(list[real] c) {
+	// remember, c[0] is the "safe" category which doesnt matter here
+	if (c[1] <= 25.0 && c[2] < 0.001 && c[3] < 0.001)
+		return 4; // ++ rating
+	
+	if (c[1] <= 30.0 && c[2] <= 5.0 && c[3] < 0.001)
+		return 3; // + rating
+		
+	if (c[1] <= 40.0 && c[2] <= 10.0 && c[3] <= 5.0)
+		return 2; // o rating
+		
+	if (c[1] <= 50.0 && c[2] <= 15.0 && c[3] <= 5.0)
+		return 1; 
+		
+	return 0; // -- rating
+}

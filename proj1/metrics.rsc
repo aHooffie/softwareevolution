@@ -27,6 +27,7 @@ str giveRating(int rating) {
 	}
 }
 
+
 // Entry point, starts calculations of all relevant metrics
 void main(loc project) {
 	M3 m3Model = createM3FromEclipseProject(project);
@@ -42,32 +43,31 @@ void main(loc project) {
 	return; */
 
 	int volume = calcVolume(javaFiles);
-	println("Total volume: <volume> lines of code. Volume Rating: <(rateVolume(volume / 1000))>");
+	int volumeRating = rateVolume(volume / 1000);
 	
 	list[real] unitSizePct = calcUnitSize(m3Model);
 	int unitSize = rateUnitSize(unitSizePct);
-	println("Unit size: <unitSize> - unit size pct: <unitSizePct>");
 
 	list[real] unitComplexityPct = calcUnitComp(m3Model, javaFiles);
-	
-	println("unitComplexityPct: <unitComplexityPct>");
-	
-	int unitComplexity = 1337; //todo
-	//int unitComplexity =  rateUnitComp(unitComplexityPct);
+	int unitComplexity =  rateUnitComp(unitComplexityPct);
 	
 	println("Calculating duplication percentage..");
 	real dupPct = calcDuplication(m3Model);
-	println("Duplication percentage: <dupPct>");
+	int dupRank = duplicationRank(dupPct);
+	
 	
 	// Print the corresponding rating. 	
-	
-	
+	println("Total volume: <volume> lines of code.");
+	println("Volume rating: <volumeRating>");
 	
 	println("Unit size per category in %: <unitSizePct>.");
 	println("Unit size rating: <giveRating(unitSize)>");	
 	
 	println("Unit complexity per category in %: <unitComplexityPct>.");
-	println("Unit complexity rating: <giveRating(unitComplexity)>");		
+	println("Unit complexity rating: <giveRating(unitComplexity)>");	
+	
+	println("Duplication percentage: <dupPct>");
+	println("Duplication rank: <giveRating(dupRank)>");
 	
 	int stability = 1; // unit testing
 	int analysability = (volume + unitSize) / 2; // + stability + duplication 
