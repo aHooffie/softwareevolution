@@ -21,12 +21,12 @@ list[real] calcUnitSize(nlines, categories) {
 	} else {
 		categories[3] += nlines;
 	}
-	
+
 	return categories;
 }
 
 // Max. percentages per rating (found in reader).
-// ++ = [3] = 0, [2] = 0, [1] <= 25%, [0] >= 75% 
+// ++ = [3] = 0, [2] = 0, [1] <= 25%, [0] >= 75%
 // + = [3] = 0, [2] = 5, [1] = 30%, [0] >
 // o = [3] = 0, [2] = 10, [1] = 40, [0]>
 // - = [3] = 5, [2] = 15, [1] = 50, [0]>
@@ -37,36 +37,36 @@ int rateUnitSize(categories) {
 	if (categories[3] == 0 && categories[2] == 0) {
 		if (categories[1] <= 25) {
 			return 4;
-		} 
+		}
 	}
-	
+
 	if (categories[3] == 0 && categories[2] <= 5) {
 		if (categories[1] <= 30) {
 			return 3;
 		}
 	}
-	
+
 	if (categories[3] == 0 && categories[2] <= 10) {
 		if (categories[1] <= 40) {
 			return 2;
 		}
 	}
-	
+
 	if (categories[3] <= 5 && categories[2] <= 15) {
 		if (categories[1] <= 50) {
 			return 1;
 		}
-	}		
-		
-	return 0;		
+	}
+
+	return 0;
 }
 
 // duplicates: 967.
-list[real] calcUnitSize(folder) {
+list[real] calcUnitSize(M3 myModel) {
 	list[real] categories = [0.0, 0.0, 0.0, 0.0];
 
 	// Get all methods from the project.
-	myModel = createM3FromEclipseProject(folder);	
+	//myModel = createM3FromEclipseProject(folder);
 	methodsx = toList(methods(myModel));
 	nmethods = size(methodsx);
 
@@ -75,14 +75,14 @@ list[real] calcUnitSize(folder) {
 		src = readFile(methodsx[i]);
 		categories = calcUnitSize(unitsize(src), categories);
 	}
-	
+
 	// Calculate percentages.
 	totalLines = sum(categories);
 	if (totalLines != 0) {
 		for (int k <- [0 .. 4]) {
 			categories[k] = (categories[k] * 100) / totalLines;
 		}
-	}	
-	
+	}
+
 	return categories;
 }

@@ -8,7 +8,7 @@ import util::FileSystem;
 // Returns the number of source line codes of all Java-files in a folder.
 // Ignores lines with only comments or whitelines.
 // NOTE: assumes that all source files use "\n" line endings, not "\r\n" !
-int unitsize (src) {
+int unitsize (str src) {
 	lines = split("\n", src);
 
 	int nSrcLines = 0;
@@ -71,8 +71,8 @@ str rateVolume(kloc) {
 
 // Compute all lines of code in .java files.
 // |project://JavaTest| 
-void main(folder) {
-	javaFiles = [ f | f <- find(folder, "java"), isFile(f) ];
+void calcVolume(list[loc] javaFiles) {
+	//javaFiles = [ f | f <- find(folder, "java"), isFile(f) ];
 	int fileCount = size(javaFiles);
 	int volume = 0;
 	

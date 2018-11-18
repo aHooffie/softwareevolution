@@ -45,17 +45,21 @@ int customHash(list[str] lines) {
 
 
 // Given a m3 java model, find all Java methods, and find percentage of duplicate code
-void detectduplicate(M3 myModel) {
+real calcDuplication(M3 myModel) {
 
-	println("Detectduplicate()");
+	if (debug)
+		println("Detectduplicate()");
 	// Print # of methods of classes in JavaTest.java
+	/*
 	int numberOfMethods(loc cl, M3 model) = size([ m | m <- model.containment[cl], isMethod(m)]);
 	map[loc class, int methodCount] numberOfMethodsPerClass = (cl:numberOfMethods(cl, myModel) | <cl,_> <- myModel.containment, isClass(cl));
-	println(numberOfMethodsPerClass.methodCount);
+	if (debug)
+		println(numberOfMethodsPerClass.methodCount);
+	*/
 
 	methodsx = toList(methods(myModel));
 	nmethods = size(methodsx);
-	//if (debug)
+	if (debug)
 		println("Number of methods: <nmethods>");
 
 	// Get project directories
@@ -87,7 +91,8 @@ void detectduplicate(M3 myModel) {
 	}*/
 
 	// actually, just loop over methods in all files, since we only care about code inside methods?
-	println("\n\nDuplicate detection =========\n");
+	if (debug)
+		println("\n\nDuplicate detection =========\n");
 
 	map[tuple[int,int],int] hashes = ();
 
@@ -121,7 +126,8 @@ void detectduplicate(M3 myModel) {
 		}
 	}
 
-	println("Made list of trimmed methods and hashes");
+	if (debug)
+		println("Made list of trimmed methods and hashes");
 
 	//println("HASHES: <hashes>");
 	// Now find duplicate hashes?
@@ -138,7 +144,7 @@ void detectduplicate(M3 myModel) {
 	int nDupeLines = 0;
 	tuple[int,int] prevMatch = <-1,-1>;
 	for (int i <- [0 .. nHashes]) {
-		if (i % 100 == 0)
+		if (debug && i % 100 == 0)
 			println("i<i> / <nHashes>");
 		for (int j <- [0 .. nHashes]) {
 			if (j == i)
@@ -195,9 +201,13 @@ void detectduplicate(M3 myModel) {
 		}
 	}
 
-	println("NDUpeLines: <nDupeLines>");
-	println("numMethodSLOC: <numMethodSLOC>");
+
 	real pct = toReal(nDupeLines)/toReal(numMethodSLOC) * 100.0;
-	println("Duplication percentage: <pct>");
+	if (debug) {
+		println("NDUpeLines: <nDupeLines>");
+		println("numMethodSLOC: <numMethodSLOC>");
+		println("Duplication percentage: <pct>");
+	}
+	return pct;
 }
 
