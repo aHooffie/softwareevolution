@@ -5,10 +5,61 @@ import List;
 import String;
 import util::FileSystem;
 
+list[str] trimSource(str src) {
+	list[str] lines = split("\n", src);
+	// Iterate over each line of the method
+	int nLines = size(lines);
+	list[str] ret = [];
+	bool inMLC = false; // in multi-line comment
+	for (int i <- [0 .. nLines]) {
+		trimmed = trim(lines[i]); // removes leading+trailing whitespace
+		
+		if (startsWith(trimmed, "//"))
+			continue;
+		if (size(trimmed) < 1)
+			continue;
+		
+		if (!inMLC) {
+			if (startsWith(trimmed, "/*")) {
+				inMLC = true;
+			}
+			else if (!inMLC && contains(trimmed, "/*")) {
+				inMLC = true;
+				// this line did not start with /*, so it had some code, so count it
+				ret += trimmed;
+			}
+		}
+		// even if we just found out this line starts a MLC, check if it also ends on the same line.
+		// NOTE: this endsWith+contains method calls can probably be optimized into 1 "findFirst" or similar call by being smart
+		if (inMLC) {
+			if (endsWith(trimmed, "*/")) {
+				inMLC = false;
+				// no code on this line, so continue to next
+				continue;
+			}
+			else if (contains(trimmed, "*/")) {
+				// this line did not end with */, so possibly there is code here, so count this line
+				inMLC = false;
+			}
+		}
+		
+		if (inMLC)
+			continue;
+		
+		ret += trimmed;
+	}
+
+	return ret;
+}
+
+int unitsize (str src) {
+	return size(trimSource(src));
+}
+
 // Returns the number of source line codes of all Java-files in a folder.
 // Ignores lines with only comments or whitelines.
 // NOTE: assumes that all source files use "\n" line endings, not "\r\n" !
-int unitsize (str src) {
+int unitsizeOld (str src) {
 	lines = split("\n", src);
 
 	int nSrcLines = 0;
@@ -71,7 +122,7 @@ str rateVolume(kloc) {
 
 // Compute all lines of code in .java files.
 // |project://JavaTest| 
-void calcVolume(list[loc] javaFiles) {
+int calcVolume(list[loc] javaFiles) {
 	//javaFiles = [ f | f <- find(folder, "java"), isFile(f) ];
 	int fileCount = size(javaFiles);
 	int volume = 0;
@@ -81,6 +132,7 @@ void calcVolume(list[loc] javaFiles) {
 		volume += unitsize(src);
 	}
 	
-	println("Total volume: <volume> lines of code.");
-	println("Volume Rating: <rateVolume(volume / 1000)>");
+	//println("Total volume: <volume> lines of code.");
+	//println("Volume Rating: <rateVolume(volume / 1000)>");
+	return volume;
 }
