@@ -106,18 +106,18 @@ int skipMultilineComment(lines, index) {
 }
 
 // Give rating to volume.
-str rateVolume(kloc) {
+int rateVolume(int kloc) {
 	if (kloc < 67) {
-		return "++";
+		return 4; // ++
 	} else if (kloc < 247) {
-		return "+";
+		return 3; // +;
 	} else if (kloc < 666) {
-		return "o";
+		return 2; // o
 	} else if (kloc < 1311){
-	 return "-";
-	} else {
-		return "--";
+	 return 1; // -
 	}
+	
+	return 0; // --
 }
 
 // Compute all lines of code in .java files.

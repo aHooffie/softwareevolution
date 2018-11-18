@@ -12,6 +12,7 @@ import lang::java::m3::Core;
 import lang::java::jdt::m3::Core;
 import util::Resources;
 import util::FileSystem;
+import util::Math;
 
 str giveRating(int rating) {
 	if (rating == 0) {
@@ -56,9 +57,10 @@ void main(loc project) {
 	int dupRank = duplicationRank(dupPct);
 	
 	
-	// Print the corresponding rating. 	
-	println("Total volume: <volume> lines of code.");
-	println("Volume rating: <volumeRating>");
+	// Print the results
+	println("============ Metrics ============");
+	println("Volume: <volume> lines of code.");
+	println("Volume rating: <giveRating(volumeRating)>");
 	
 	println("Unit size per category in %: <unitSizePct>.");
 	println("Unit size rating: <giveRating(unitSize)>");	
@@ -69,14 +71,20 @@ void main(loc project) {
 	println("Duplication percentage: <dupPct>");
 	println("Duplication rank: <giveRating(dupRank)>");
 	
-	int stability = 1; // unit testing
-	int analysability = (volume + unitSize) / 2; // + stability + duplication 
-	int changeability = (unitComplexity); // + duplication
-	int testability = (unitComplexity + unitSize); // + stability
+	//int stability = 1; // unit testing
+	int analysability = (volume + dupRank + unitSize) / 3; // + unit testing 
+	int changeability = (unitComplexity + dupRank) / 2;
+	int testability = (unitComplexity + unitSize) / 2; // + unit testing
+	
+	// overall maintainability is an average of everything
+	real maintainability = toReal(volumeRating  + unitSize + unitComplexity + dupRank) / 4.0; // + unit testing
+
+	println("\n============ Scores ============");
 
 	println("Analysability rating: <giveRating(analysability)>");		
 	println("Changeability rating: <giveRating(changeability)>");
-	println("Stability rating: <giveRating(stability)>");
+	println("Stability rating: N/A");
 	println("Testability rating: <giveRating(testability)>");
+	println("Maintainability (overall): <giveRating(round(maintainability))>");
 }
 
