@@ -31,6 +31,7 @@ list[str] trimSource(str src) {
 		}
 		// even if we just found out this line starts a MLC, check if it also ends on the same line.
 		// NOTE: this endsWith+contains method calls can probably be optimized into 1 "findFirst" or similar call by being smart
+		// and still, will give wrong result if there's a case like /* bla */ int x=1; /* lol */
 		if (inMLC) {
 			if (endsWith(trimmed, "*/")) {
 				inMLC = false;

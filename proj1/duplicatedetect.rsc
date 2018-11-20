@@ -14,21 +14,6 @@ import DateTime;
 
 int debug = 0;
 
-// returns a list of trimmed lines (leading+trailing whitespace removed)
-list[str] trimSource(str src) {
-	list[str] lines = split("\n", src);
-	// Iterate over each line of the method
-	int nLines = size(lines);
-	list[str] ret = [];
-	for (int i <- [0 .. nLines]) {
-		trimmed = trim(lines[i]); // removes leading+trailing whitespace
-		if (!startsWith(trimmed, "//") && size(trimmed) > 0)
-			ret += trimmed;
-	}
-	if (debug > 1)
-		println("Trimmed method: <ret>");
-	return ret;
-}
 
 // a simple hash function used to hash list of strings
 int customHash(list[str] lines) {
