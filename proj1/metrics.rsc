@@ -88,7 +88,7 @@ void main(loc project) {
 
 	println("Analysability rating: <giveRating(analysability)>");
 	println("Changeability rating: <giveRating(changeability)>");
-	println("Stability rating: N/A");
+	println("Stability rating: N/A (depends on unit testing metric which we have not calculated)");
 	println("Testability rating: <giveRating(testability)>");
 	println("Maintainability (overall): <giveRating(round(maintainability))>");
 

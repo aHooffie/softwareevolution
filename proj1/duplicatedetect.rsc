@@ -123,7 +123,7 @@ real calcDuplication(M3 myModel) {
 			println("i<i> / <nHashes>");
 
 		hi = hashesList[i];
-		hi_0 = hi[0];
+		hi_0 = hi[0]; // location
 		otherLocsSameHash = sort(hashToLocationsMap[hi[1]]);
 
 		int nCollissions = size(otherLocsSameHash); // includes this current entry
