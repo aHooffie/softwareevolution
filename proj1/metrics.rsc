@@ -15,6 +15,24 @@ import util::FileSystem;
 import util::Math;
 import DateTime;
 
+// This method prints out the trimmed methods in the java files given.
+// This is to test whether the source trimmer is functioning as expected
+void testSourceTrimmer(list[loc] javaFiles) {
+	int nFiles = size(javaFiles);
+
+	for (int i <- [0 .. nFiles]) {
+		str src = readFile(javaFiles[i]);
+		list[str] trimmed = trimSource(src); // gives a list of lines, no newline chars
+		int nLines = size(trimmed);
+		str srcTrimmed = "";
+		for (int j <- [0 .. nLines]) {
+			srcTrimmed += trimmed[j] + "\n";
+		}
+		println("\n-------- Trimmed <javaFiles[i]> --------");
+		println(srcTrimmed);
+	}
+}
+
 str giveRating(int rating) {
 	if (rating == 0) {
 		return "--";
@@ -38,15 +56,7 @@ void main(loc project) {
 	M3 m3Model = createM3FromEclipseProject(project);
 	list[loc] javaFiles = [ f | f <- find(project, "java"), isFile(f) ];
 
-	//println("Project Java files: <javaFiles>");
-
-	// Test code to check whether comment stripping works properly - prints out trimmed methods
-	/*
-	for (int i <- [0 .. size(javaFiles)]) {
-		trimmed = trimSource(readFile(javaFiles[i]));
-		println("TRIMMED <javaFiles[i]>: <trimmed>");
-	}
-	return; */
+	// testSourceTrimmer(javaFiles);
 
 	int volume = calcVolume(javaFiles);
 	int volumeRating = rateVolume(volume / 1000);
