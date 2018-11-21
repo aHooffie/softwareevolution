@@ -50,8 +50,8 @@ real calcDuplication(M3 myModel) {
 		println("========= calcDuplication() =========");
 
 
-	methodsx = toList(methods(myModel));
-	nmethods = size(methodsx);
+	list[loc] methodsx = toList(methods(myModel));
+	int nmethods = size(methodsx);
 	if (debug > 0)
 		println("Number of methods: <nmethods>");
 
@@ -70,9 +70,9 @@ real calcDuplication(M3 myModel) {
 	for(int i <- [0 ..  nmethods]) {
 		if (debug > 1)
 			println("i:<i>, methodName: <methodsx[i]>");
-		src = readFile(methodsx[i]);
+		str src = readFile(methodsx[i]);
 		list[str] trimmed = trimSource(src); // returns a list of trimmed lines
-		numLines = size(trimmed);
+		int numLines = size(trimmed);
 
 		if (debug > 1) {
 			println("Num lines: <numLines>");
@@ -105,15 +105,13 @@ real calcDuplication(M3 myModel) {
 		println("Made list of trimmed methods and hashes, duration: <t2-t1>");
 
 	// Important step: sort hashes so they appear chronologically e.g. blocks of code following each other in functions
-	hashesList = sort([ <x, hashes[x]> | x <- hashes]);
+	list[tuple[tuple[int,int],int]] hashesList = sort([ <x, hashes[x]> | x <- hashes]);
 	if (debug > 1)
 		println("Hashes sorted: <hashesList>");
-	nHashes = size(hashesList);
+	int nHashes = size(hashesList);
 
 	map[tuple[int,int],list[tuple[int,int]]] dupLocs = ();
 	map[tuple[int,int], bool] countedLocs = ();
-
-	dursum = duration(0,0,0,0,0,0,0);
 
 	int nDupeLines = 0;
 	tuple[int,int] prevMatch = <-1,-1>;
@@ -137,7 +135,7 @@ real calcDuplication(M3 myModel) {
 			if (hj_0 in dupLocs) {
 				if (hi_0 in dupLocs[hj_0]) {
 					if (debug > 1)
-						println("1 SKIPPING Loc <hashesList[i][0]> match at <hashesList[j][0]>");
+						println("1 SKIPPING Loc <hi_0> match at <hj_0>");
 					continue;
 				}
 			}
@@ -183,14 +181,8 @@ real calcDuplication(M3 myModel) {
 
 
 	real pct = toReal(nDupeLines)/toReal(totalSLOC) * 100.0;
-	if (debug > 0) {
-		println("Number of duplicate lines: <nDupeLines>");
-		println("Total source lines of code: <totalSLOC>");
-		println("Duplication percentage: <pct>");
-	}
-
 	dur = now() - t1;
-	println("Duration taken by duplication code: <dur> - SLOC: <totalSLOC> - Duplicate lines: <nDupeLines>");
+	println("Duration taken by duplication code: <dur> - SLOC: <totalSLOC> - Duplicate lines: <nDupeLines> - pct: <pct>");
 	return pct;
 }
 
