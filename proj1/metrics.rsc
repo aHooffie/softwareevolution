@@ -33,20 +33,28 @@ void testSourceTrimmer(list[loc] javaFiles) {
 	}
 }
 
+// global constants returned by rating functions in other modules
+public int RATING_DOUBLEMINUS = 1;
+public int RATING_MINUS = 2;
+public int RATING_O = 3;
+public int RATING_PLUS = 4;
+public int RATING_DOUBLEPLUS = 5;
+
 str giveRating(int rating) {
-	if (rating == 0) {
+	if (rating == RATING_DOUBLEMINUS) {
 		return "--";
-	} else if (rating == 1) {
+	} else if (rating == RATING_MINUS) {
 		return "-";
-	} else if (rating == 2) {
+	} else if (rating == RATING_O) {
 		return "o";
-	} else if (rating == 3) {
+	} else if (rating == RATING_PLUS) {
 		return "+";
-	} else {
+	} else if (rating == RATING_DOUBLEPLUS) {
 		return "++";
+	} else {
+		throw "Unexpected rating: <rating>";
 	}
 }
-
 
 // Entry point, starts calculations of all relevant metrics
 // Example invocation: main(|project://smallsql|);
@@ -73,36 +81,45 @@ void main(loc project) {
 
 
 	// Print the results
-	println("============ Metrics ============");
+	println("\n============ Metrics ============");
 	println("Volume: <volume> lines of code.");
 	println("Volume rating: <giveRating(volumeRating)>");
 
-	println("Unit size per category in %: <unitSizePct>.");
+	//println("Unit size per category in %: <unitSizePct>.");
+	println("Unit size risk profile:");
+	println("    \<= 15 lines of code:   <unitSizePct[0]> %");
+	println("    \<= 30 lines of code:   <unitSizePct[1]> %");
+	println("    \<= 60 lines of code:   <unitSizePct[2]> %");
+	println("    \>  60 lines of code:   <unitSizePct[3]> %");
 	println("Unit size rating: <giveRating(unitSize)>");
 
-	println("Unit complexity per category in %: <unitComplexityPct>.");
+	//println("Unit complexity per category in %: <unitComplexityPct>.");
+	println("Unit complexity risk profile:");
+	println("   simple,       without much risk (CC 1-10):     <unitComplexityPct[0]> %");
+	println("   more complex, moderate risk     (CC 11-20):    <unitComplexityPct[1]> %");
+	println("   complex,      high risk         (CC 21-50):    <unitComplexityPct[2]> %");
+	println("   untestable,   very high risk    (CC \>50):      <unitComplexityPct[3]> %");
 	println("Unit complexity rating: <giveRating(unitComplexity)>");
 
 	println("Duplication percentage: <dupPct>");
 	println("Duplication rank: <giveRating(dupRank)>");
 
 	//int stability = 1; // unit testing
-	int analysability = (volume + dupRank + unitSize) / 3; // + unit testing
-	int changeability = (unitComplexity + dupRank) / 2;
-	int testability = (unitComplexity + unitSize) / 2; // + unit testing
+	int analysability = round(toReal(volumeRating + dupRank + unitSize) / 3.0); // + unit testing
+	int changeability = round(toReal(unitComplexity + dupRank) / 2.0);
+	int testability = round(toReal(unitComplexity + unitSize) / 2.0); // + unit testing
 
 	// overall maintainability is an average of everything
 	real maintainability = toReal(volumeRating  + unitSize + unitComplexity + dupRank) / 4.0; // + unit testing
 
 	println("\n============ Scores ============");
-
-	println("Analysability rating: <giveRating(analysability)>");
-	println("Changeability rating: <giveRating(changeability)>");
-	println("Stability rating: N/A (depends on unit testing metric which we have not calculated)");
-	println("Testability rating: <giveRating(testability)>");
-	println("Maintainability (overall): <giveRating(round(maintainability))>");
+	println("Analysability rating:      <giveRating(analysability)> (volume + duplication + unitsize (+unittesting))");
+	println("Changeability rating:      <giveRating(changeability)> (complexity + duplication)");
+	println("Stability rating:          N/A (relies solely on unit testing metric which we have not calculated)");
+	println("Testability rating:        <giveRating(testability)> (complexity + unitsize (+unittesting))");
+	println("Maintainability (overall): <giveRating(round(maintainability))> (volume + complexity + duplication + unitsize (+unittesting))");
 
 	t2 = now() - t1;
-	println("\nDone after <t2>");
+	println("\nOperation completed in <t2.minutes>m <t2.seconds>s <t2.milliseconds>ms");
 }
 

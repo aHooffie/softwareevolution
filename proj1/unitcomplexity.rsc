@@ -11,6 +11,7 @@ import lang::java::m3::Core;
 import lang::java::jdt::m3::Core;
 import unitsize;
 import volume;
+import metrics;
 
 // https://pmd.github.io/latest/pmd_java_metrics_index.html#cyclomatic-complexity-cyclo
 // https://www.theserverside.com/feature/How-to-calculate-McCabe-cyclomatic-complexity-in-Java
@@ -161,16 +162,16 @@ list[real] calcUnitComp(M3 m3Model, list[loc] javaFiles) {
 int rateUnitComp(list[real] c) {
 	// remember, c[0] is the "safe" category which doesnt matter here
 	if (c[1] <= 25.0 && c[2] < 0.001 && c[3] < 0.001)
-		return 4; // ++ rating
+		return RATING_DOUBLEPLUS; // ++ rating
 
 	if (c[1] <= 30.0 && c[2] <= 5.0 && c[3] < 0.001)
-		return 3; // + rating
+		return RATING_PLUS; // + rating
 
 	if (c[1] <= 40.0 && c[2] <= 10.0 && c[3] <= 5.0)
-		return 2; // o rating
+		return RATING_O; // o rating
 
 	if (c[1] <= 50.0 && c[2] <= 15.0 && c[3] <= 5.0)
-		return 1;
+		return RATING_MINUS;
 
-	return 0; // -- rating
+	return RATING_DOUBLEMINUS; // -- rating
 }

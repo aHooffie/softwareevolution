@@ -9,6 +9,7 @@ import util::FileSystem;
 import lang::java::m3::Core;
 import lang::java::jdt::m3::Core;
 import volume;
+import metrics;
 
 // Add the amount of lines to the right category of method sizes.
 list[real] calcUnitSize(int nlines, list[real] categories) {
@@ -36,29 +37,29 @@ list[real] calcUnitSize(int nlines, list[real] categories) {
 int rateUnitSize(list[real] categories) {
 	if (categories[3] == 0 && categories[2] == 0) {
 		if (categories[1] <= 25) {
-			return 4;
+			return RATING_DOUBLEPLUS;
 		}
 	}
 
 	if (categories[3] == 0 && categories[2] <= 5) {
 		if (categories[1] <= 30) {
-			return 3;
+			return RATING_PLUS;
 		}
 	}
 
 	if (categories[3] == 0 && categories[2] <= 10) {
 		if (categories[1] <= 40) {
-			return 2;
+			return RATING_O;
 		}
 	}
 
 	if (categories[3] <= 5 && categories[2] <= 15) {
 		if (categories[1] <= 50) {
-			return 1;
+			return RATING_MINUS;
 		}
 	}
 
-	return 0;
+	return RATING_DOUBLEMINUS;
 }
 
 // duplicates: 967.

@@ -11,6 +11,7 @@ import util::FileSystem;
 import util::Math;
 import volume;
 import DateTime;
+import metrics;
 
 int debug = 0;
 
@@ -31,15 +32,15 @@ int customHash(list[str] lines) {
 
 int duplicationRank(real dupPct) {
 	if (dupPct <= 3.0)
-		return 4; // ++
+		return RATING_DOUBLEPLUS; // ++
 	if (dupPct <= 5.0)
-		return 3; // +
+		return RATING_PLUS; // +
 	if (dupPct <= 10.0)
-		return 2; // o
+		return RATING_O; // o
 	if (dupPct <= 20.0)
-		return 1; // -
+		return RATING_MINUS; // -
 
-	return 0; // --
+	return RATING_DOUBLEMINUS; // --
 }
 
 // Given a m3 java model, find all Java methods, and find percentage of duplicate code
@@ -178,7 +179,6 @@ real calcDuplication(M3 myModel) {
 				println("meth1 <hashesList[i][0][0]> i:<i>, Loc <hashesList[i][0]> match at <hj_0> toAdd=<toAdd>  meth2: <hj_0[0]>");
 		}
 	}
-
 
 	real pct = toReal(nDupeLines)/toReal(totalSLOC) * 100.0;
 	dur = now() - t1;

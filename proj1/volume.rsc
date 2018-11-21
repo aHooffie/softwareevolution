@@ -4,6 +4,7 @@ import IO;
 import List;
 import String;
 import util::FileSystem;
+import metrics;
 
 list[str] trimSource(str src) {
 	list[str] lines = split("\n", src);
@@ -110,22 +111,20 @@ int skipMultilineComment(lines, index) {
 // Give rating to volume.
 int rateVolume(int kloc) {
 	if (kloc < 67) {
-		return 4; // ++
+		return RATING_DOUBLEPLUS; // ++
 	} else if (kloc < 247) {
-		return 3; // +;
+		return RATING_PLUS; // +;
 	} else if (kloc < 666) {
-		return 2; // o
+		return RATING_O; // o
 	} else if (kloc < 1311){
-	 return 1; // -
+	   return RATING_MINUS; // -
 	}
 
-	return 0; // --
+	return RATING_DOUBLEMINUS; // --
 }
 
 // Compute all lines of code in .java files.
-// |project://JavaTest|
 int calcVolume(list[loc] javaFiles) {
-	//javaFiles = [ f | f <- find(folder, "java"), isFile(f) ];
 	int fileCount = size(javaFiles);
 	int volume = 0;
 
@@ -134,7 +133,5 @@ int calcVolume(list[loc] javaFiles) {
 		volume += unitsize(src);
 	}
 
-	//println("Total volume: <volume> lines of code.");
-	//println("Volume Rating: <rateVolume(volume / 1000)>");
 	return volume;
 }
