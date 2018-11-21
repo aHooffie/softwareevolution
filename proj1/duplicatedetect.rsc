@@ -23,7 +23,7 @@ int customHash(list[str] lines) {
 		str line = lines[i];
 		int lineLen = size(line);
 		for (j <- [0..lineLen]) {
-			hash = hash*9 + charAt(line, j);
+			hash = hash*11 + charAt(line, j);
 		}
 	}
 	return hash;
