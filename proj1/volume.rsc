@@ -7,53 +7,79 @@ import util::FileSystem;
 import metrics;
 
 list[str] trimSource(str src) {
+	list[str] result = [];
 	list[str] lines = split("\n", src);
-	// Iterate over each line of the method
-	int nLines = size(lines);
-	list[str] ret = [];
-	bool inMLC = false; // in multi-line comment
+	bool inMLC = false; 
+	
+	list[str] trimmed = [ trim(line) | line <- lines];
+	trimmed = [ line | line <- trimmed, !(startsWith(line, "//")), size(line) > 0];
+	
+	int nLines = size(trimmed);
 	for (int i <- [0 .. nLines]) {
-		trimmed = trim(lines[i]); // removes leading+trailing whitespace
-
-		if (startsWith(trimmed, "//"))
-			continue;
-		if (size(trimmed) < 1)
-			continue;
-
+		str line = trimmed[i];
+		
+		// Check if a MLC starts on current line. 
 		if (!inMLC) {
-			if (startsWith(trimmed, "/*")) {
+			if (startsWith(line, "/*")) {
 				inMLC = true;
-			}
-			else if (contains(trimmed, "/*")) {
+			} else if (contains(line, "/*")) {
 				inMLC = true;
-				// this line did not start with /*, so it had some code, so count it
-				ret += trimmed;
+				result += line;
 			}
 		}
-		// even if we just found out this line starts a MLC, check if it also ends on the same line.
-		// NOTE: this endsWith+contains method calls can probably be optimized into 1 "findFirst" or similar call by being smart
-		// and still, will give wrong result if there's a case like
-		//		/* bla */ int x=1; /* lol */   <-- in this case, this line will be skipped = bad
+
+		// Check if a MLC ends on current line.
 		if (inMLC) {
-			if (endsWith(trimmed, "*/")) {
+			if (endsWith(line, "*/")) {
 				inMLC = false;
-				// no code on this line, so continue to next (this is not 100% sure! - gives wrong result in some cases)
+				continue;
+			} else if (contains(line, "*/")) {
+				inMLC = false;
+			} else {
 				continue;
 			}
-			else if (contains(trimmed, "*/")) {
-				// this line did not end with */, so possibly there is code here, so count this line
-				inMLC = false;
-			}
 		}
-
-		if (inMLC)
-			continue;
-
-		ret += trimmed;
+		
+		//		/* bla */ int x = 1; /* lol */   <-- in this case, this line will be skipped = bad
+		result += line;
 	}
 
-	return ret;
+	return result;
 }
+
+int unitsize (str src) {
+	return size(trimSource(src));
+}
+
+
+// Give rating to volume.
+int rateVolume(int kloc) {
+	if (kloc < 67) {
+		return RATING_DOUBLEPLUS;
+	} else if (kloc < 247) {
+		return RATING_PLUS;
+	} else if (kloc < 666) {
+		return RATING_O;
+	} else if (kloc < 1311){
+	   return RATING_MINUS;
+	}
+
+	return RATING_DOUBLEMINUS;
+}
+
+// Compute all lines of code in .java files.
+int calcVolume(list[loc] javaFiles) {
+	int fileCount = size(javaFiles);
+	int volume = 0;
+
+	for (int i <- [0 ..  fileCount]) {
+		src = readFile(javaFiles[i]);
+		volume += unitsize(src);
+	}
+
+	return volume;
+}
+
 
 // return <newInMLC, countThisLine> tuple
 // NOTE!! Does not handle when /* or */ are inside string quotes ("/*") ?!
@@ -115,60 +141,4 @@ tuple[bool,bool] skipMultilineComments(str trimmed, bool inMLC) {
 	}
 
 	return <inMLC,count_line>;
-}
-
-list[str] trimSourceNew(str src) {
-	list[str] lines = split("\n", src);
-	// Iterate over each line of the method
-	int nLines = size(lines);
-	list[str] ret = [];
-	bool inMLC = false; // in multi-line comment
-	for (int i <- [0 .. nLines]) {
-		str trimmed = trim(lines[i]); // removes leading+trailing whitespace
-
-		if (startsWith(trimmed, "//"))
-			continue;
-		if (size(trimmed) < 1)
-			continue;
-
-		bool countThis;
-		<inMLC,countThis> = skipMultilineComments(trimmed, inMLC);
-		if (countThis)
-			ret += trimmed;
-	}
-
-	return ret;
-}
-
-int unitsize (str src) {
-	return size(trimSource(src));
-}
-
-
-// Give rating to volume.
-int rateVolume(int kloc) {
-	if (kloc < 67) {
-		return RATING_DOUBLEPLUS; // ++
-	} else if (kloc < 247) {
-		return RATING_PLUS; // +;
-	} else if (kloc < 666) {
-		return RATING_O; // o
-	} else if (kloc < 1311){
-	   return RATING_MINUS; // -
-	}
-
-	return RATING_DOUBLEMINUS; // --
-}
-
-// Compute all lines of code in .java files.
-int calcVolume(list[loc] javaFiles) {
-	int fileCount = size(javaFiles);
-	int volume = 0;
-
-	for (int i <- [0 ..  fileCount]) {
-		src = readFile(javaFiles[i]);
-		volume += unitsize(src);
-	}
-
-	return volume;
 }
