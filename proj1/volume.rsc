@@ -6,7 +6,7 @@ import String;
 import util::FileSystem;
 import metrics;
 
-list[str] trimSourceOld(str src) {
+list[str] trimSource(str src) {
 	list[str] lines = split("\n", src);
 	// Iterate over each line of the method
 	int nLines = size(lines);
@@ -80,10 +80,6 @@ tuple[bool,bool] skipMultilineComments(str trimmed, bool inMLC) {
 			//println("FindFirst substr: <substr>");
 			if (ind != -1 && ind == size(substr)-2) { // means that this line begins with /* and ends with a */ , with no code in the middle, so don't count this line
 				inMLC = false;
-				/*line_ended_with_end_of_multilinecomment = true;
-				break;*/
-				//return <inMLC, true>;
-				//count_line = true;
 				break;
 			}
 			else if (ind != -1) {
@@ -98,8 +94,6 @@ tuple[bool,bool] skipMultilineComments(str trimmed, bool inMLC) {
 				int ind2 = findFirst(substr, "/*");
 				if (ind2 > 0 || ind2 == -1) {
 					// ok, means there was some code on this line, so count it!
-					//ret += trimmed;
-					//line_ended_with_end_of_multilinecomment = true;
 					count_line = true;
 					if (ind2 > 0)
 						inMLC = true;
@@ -120,11 +114,10 @@ tuple[bool,bool] skipMultilineComments(str trimmed, bool inMLC) {
 		count_line = true;
 	}
 
-
 	return <inMLC,count_line>;
 }
 
-list[str] trimSource(str src) {
+list[str] trimSourceNew(str src) {
 	list[str] lines = split("\n", src);
 	// Iterate over each line of the method
 	int nLines = size(lines);
