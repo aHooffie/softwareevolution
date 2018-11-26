@@ -13,7 +13,7 @@ import metrics;
 import volume;
 
 // Add the amount of lines to the right category of method sizes.
-list[real] calcUnitSize(int nlines, list[real] categories) {
+list[real] categorizeUnitSize(int nlines, list[real] categories) {
 	if (nlines <= 15) {
 		categories[0] += nlines;
 	} else if (nlines <= 30) {
@@ -55,7 +55,7 @@ list[real] calcUnitSize(M3 myModel) {
 	// Calculate lines per method. Put them in the right category (<15, <30, <60, >60 lines).
 	for (int i <- [0 .. nmethods]) {
 		src = readFile(methodsx[i]);
-		categories = calcUnitSize(unitsize(src), categories);
+		categories = categorizeUnitSize(unitsize(src), categories);
 	}
 
 	// Calculate percentages.
