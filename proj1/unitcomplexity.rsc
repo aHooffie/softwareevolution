@@ -102,29 +102,27 @@ map[str, int] mapMethods(M3 m3Model) {
    Then, we can use this path for other methods in the same file.
 */
 tuple[bool, str] getClassPath(str javaFileName, str methodName, map[str, int] methodSLOC) {
-	str orig = javaFileName;
 	int ind = size("project://");
-	int endInd = findFirst(orig, ".java|");
-	str s = substring(orig, ind, endInd);
+	int endInd = findFirst(javaFileName, ".java|");
+	str s = substring(javaFileName, ind, endInd); //the string which will be "shrunk" from the front until we find a match in methodSLOC
 	str classPath = "?";
 	bool foundClassPath = false;
 
 	while (true) {
-		str toTry = s+"/<methodName>";
 		try {
 			// see if this path is in the map, statement below with raise exception if it doesn't exist
-			methodSLOC[toTry];
-			classPath = s; // ok, it worked
+			methodSLOC[s+"/<methodName>"];
+			classPath = s; // ok, this key existed in the map, so we found it
 			foundClassPath = true;
 			break;
 		} catch NoSuchKey(a): {
-			t = findFirst(s, "/");
-			if (t == -1) {
-				println("Could not find SLOC for method <orig>/<methodName>, possibly a method inside a method..");
+			int nextSlashIndex = findFirst(s, "/");
+			if (nextSlashIndex == -1) {
+				println("Could not find SLOC for method <javaFileName>/<methodName>, possibly a method inside a method..");
 				break;
 			}
-			// Skip past the first / and try next guess
-			s = substring(s, t+1);
+			// Skip past the next / and try next guess
+			s = substring(s, nextSlashIndex+1);
 		}
 	}
 
