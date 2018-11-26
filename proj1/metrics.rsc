@@ -73,10 +73,10 @@ void main(loc project) {
 	int volumeRating = rateVolume(volume / 1000);
 
 	list[real] unitSizePct = calcUnitSize(m3Model);
-	int unitSize = rateUnitSize(unitSizePct);
+	int unitSize = rateUnit(unitSizePct);
 
 	list[real] unitComplexityPct = calcUnitComp(m3Model, javaFiles);
-	int unitComplexity =  rateUnitComp(unitComplexityPct);
+	int unitComplexity =  rateUnit(unitComplexityPct);
 
 	//println("Calculating duplication percentage..");
 	real dupPct = calcDuplication(m3Model);
@@ -110,13 +110,12 @@ void main(loc project) {
 	int maintainability = round(toReal(volumeRating  + unitSize + unitComplexity + dupRank) / 4.0);
 
 	println("\n============ Scores ============");
-	println("Analysability rating:      <giveRating(analysability)> (volume + duplication + unitsize)");
-	println("Changeability rating:      <giveRating(changeability)> (complexity + duplication)");
-	println("Testability rating:        <giveRating(testability)> (complexity + unitsize)");
-	println("Stability rating:          N/A (relies solely on the unit testing, which we have not calculated)");	
-	println("Maintainability (overall): <giveRating(maintainability)> (volume + complexity + duplication + unitsize)");
+	println("Analysability rating:      <giveRating(analysability)> (volume + duplication + unitsize).");
+	println("Changeability rating:      <giveRating(changeability)> (complexity + duplication).");
+	println("Testability rating:        <giveRating(testability)> (complexity + unitsize).");
+	println("Stability rating:          N/A (relies solely on the unit testing, which we have not calculated).");	
+	println("Maintainability (overall): <giveRating(maintainability)> (volume + complexity + duplication + unitsize).");
 
 	t2 = now() - t1;
 	println("\nOperation completed in <t2.minutes>m <t2.seconds>s <t2.milliseconds>ms");
 }
-
