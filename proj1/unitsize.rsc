@@ -4,12 +4,13 @@ import IO;
 import List;
 import Set;
 import String;
-import util::FileSystem;
 
 import lang::java::m3::Core;
 import lang::java::jdt::m3::Core;
-import volume;
+import util::FileSystem;
+
 import metrics;
+import volume;
 
 // Add the amount of lines to the right category of method sizes.
 list[real] calcUnitSize(int nlines, list[real] categories) {
@@ -33,36 +34,27 @@ list[real] calcUnitSize(int nlines, list[real] categories) {
 // - = [3] = 5, [2] = 15, [1] = 50, [0]>
 // -- = REST
 
-// Ugly as fuck. Works for now.
+// Method to rate the unit size based on the risk profile percentages, SIG article (p. 6). 
 int rateUnitSize(list[real] categories) {
-	if (categories[3] == 0 && categories[2] == 0) {
-		if (categories[1] <= 25) {
-			return RATING_DOUBLEPLUS;
-		}
+	if (categories[3] == 0 && categories[2] == 0 && categories[1] <= 25) {
+		return RATING_DOUBLEPLUS;
 	}
 
-	if (categories[3] == 0 && categories[2] <= 5) {
-		if (categories[1] <= 30) {
-			return RATING_PLUS;
-		}
+	if (categories[3] == 0 && categories[2] <= 5 && categories[1] <= 30) {
+		return RATING_PLUS;
 	}
 
-	if (categories[3] == 0 && categories[2] <= 10) {
-		if (categories[1] <= 40) {
-			return RATING_O;
-		}
+	if (categories[3] == 0 && categories[2] <= 10 && categories[1] <= 40) {
+		return RATING_O;
 	}
 
-	if (categories[3] <= 5 && categories[2] <= 15) {
-		if (categories[1] <= 50) {
-			return RATING_MINUS;
-		}
+	if (categories[3] <= 5 && categories[2] <= 15 && categories[1] <= 50) {
+		return RATING_MINUS;
 	}
 
 	return RATING_DOUBLEMINUS;
 }
 
-// duplicates: 967.
 list[real] calcUnitSize(M3 myModel) {
 	list[real] categories = [0.0, 0.0, 0.0, 0.0];
 
