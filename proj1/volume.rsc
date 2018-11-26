@@ -6,7 +6,7 @@ import String;
 import util::FileSystem;
 import metrics;
 
-list[str] trimSource(str src) {
+list[str] trimSourceOld(str src) {
 	list[str] lines = split("\n", src);
 	// Iterate over each line of the method
 	int nLines = size(lines);
@@ -45,6 +45,84 @@ list[str] trimSource(str src) {
 				inMLC = false;
 			}
 		}
+
+		if (inMLC)
+			continue;
+
+		ret += trimmed;
+	}
+
+	return ret;
+}
+
+list[str] trimSource(str src) {
+	list[str] lines = split("\n", src);
+	// Iterate over each line of the method
+	int nLines = size(lines);
+	list[str] ret = [];
+	bool inMLC = false; // in multi-line comment
+	for (int i <- [0 .. nLines]) {
+		str trimmed = trim(lines[i]); // removes leading+trailing whitespace
+
+		if (startsWith(trimmed, "//"))
+			continue;
+		if (size(trimmed) < 1)
+			continue;
+
+		if (!inMLC) {
+			if (startsWith(trimmed, "/*")) {
+				inMLC = true;
+			}
+			else if (contains(trimmed, "/*")) {
+				inMLC = true;
+				// this line did not start with /*, so it had some code, so count it
+				ret += trimmed;
+			}
+		}
+		// even if we just found out this line starts a MLC, check if it also ends on the same line.
+		bool line_ended_with_end_of_multilinecomment = false;
+		if (inMLC) {
+			int ind;
+			str substr = trimmed;
+			while (true) {
+				ind = findFirst(substr, "*/");
+				//println("FindFirst substr: <substr>");
+				if (ind != -1 && ind == size(substr)-2) { // means that this line begins with /* and ends with a */ , with no code in the middle, so don't count this line
+					inMLC = false;
+					line_ended_with_end_of_multilinecomment = true;
+					break;
+				}
+				else if (ind != -1) {
+					// ok, we found a */ that was not at the end of the string.
+					// Now check whether there is some code, or whether a new /* comment starts
+					// Skip past all/any whitespace
+					int j = ind+2; // jump past */
+					while (substr[j] == " " || substr[j] == "\t") {
+						j += 1;
+					}
+					substr = substring(substr, j);
+					int ind2 = findFirst(substr, "/*");
+					if (ind2 > 0 || ind2 == -1) {
+						// ok, means there was some code on this line, so count it!
+						ret += trimmed;
+						line_ended_with_end_of_multilinecomment = true;
+						if (ind2 > 0)
+							inMLC = true;
+						break;
+					} else if (ind2 == 0) {
+						// It starts wtih a /* right away, so no code!
+						continue;
+					}
+				}
+				else if (ind == -1) {
+					inMLC = true;
+					break;
+				}
+			}
+		}
+
+		if (line_ended_with_end_of_multilinecomment)
+			continue;
 
 		if (inMLC)
 			continue;
