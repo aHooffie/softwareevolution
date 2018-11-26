@@ -75,7 +75,7 @@ void main(loc project) {
 	list[real] unitSizePct = calcUnitSize(m3Model);
 	int unitSize = rateUnit(unitSizePct);
 
-	list[real] unitComplexityPct = calcUnitComp(m3Model, javaFiles);
+	list[real] unitComplexityPct = calcUnitComplexity(m3Model, javaFiles);
 	int unitComplexity =  rateUnit(unitComplexityPct);
 
 	//println("Calculating duplication percentage..");

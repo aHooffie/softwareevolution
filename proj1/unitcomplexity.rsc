@@ -62,7 +62,7 @@ str cleanMethodName(loc name) {
 }
 
 // Build up a map of all the methods in the files, mapping them from javafile to SLOC.
-map[str, int] calculateMethods(M3 m3Model) {
+map[str, int] mapMethods(M3 m3Model) {
 	map[str, int] methodSLOC = ();
 	methodsx = toList(methods(m3Model));
 	int nMethods = size(methodsx);
@@ -77,77 +77,80 @@ map[str, int] calculateMethods(M3 m3Model) {
 }
 
 // I don't quite understand what you are doing here..  
-list[real] visitMethod(str methodName, loc javaFile, Statement impl, map[str, int] methodSLOC, list[real] categories) {
-	int sloc = 0;
-	
-	//str classPath = getClassPath(javaFiles[i]);
-	str classPath = "?";
-	
-	if (classPath == "?") {
-		orig = "<javaFile>";
-		ind = size("project://");
-		endInd = findFirst(orig, ".java|");
-		s = substring(orig, ind, endInd);
+// Possible to split this somehow still? 
+list[real] visitMethod(list[real] categories, map[str, int] methodSLOC, list[loc] javaFiles, int risks, int fileCount) {
+	for (int i <- [0 .. fileCount]) {
+		Declaration ast = createAstFromFile(javaFiles[i], true);
+		//str classPath = getClassPath(javaFiles[i]);
+		str classPath = "?";
 
-		bool bad = false;
-		while (true) {
-			str toTry = s+"/<methodName>";
-			try {
-				sloc = methodSLOC[s+"/<methodName>"];
-				classPath = s;
-				break;
-			} catch NoSuchKey(a): {
-				t = findFirst(s, "/");
-				if (t == -1) {
-					println("Could not find SLOC for method <orig>/<methodName>, possibly a method inside a method..");
-					bad = true;
-					break;
+		// Calculate per method the risk and add the amount of lines to corresponding category.
+		visit(ast) {
+			case \method(_, methodName, _, _, impl): {
+				int sloc = 0;
+				// This is incredibly hacky and ugly, but the whole situation is problematic because we don't know where the path of a source file begins.. bla
+				if (classPath == "?") {
+					//println("!!!!!!!!!!!!\nFinding class path!!!!!");
+					orig = "<javaFiles[i]>";
+					ind = size("project://");
+					endInd = findFirst(orig, ".java|");
+					s = substring(orig, ind, endInd);
+
+					bool bad = false;
+					while (true) {
+						str toTry = s+"/<methodName>";
+						//println("Trying <toTry> ...");
+						try {
+							sloc = methodSLOC[s+"/<methodName>"];
+							//println("Ok, it worked: <s>");
+							classPath = s;
+							break;
+						} catch NoSuchKey(a): {
+							t = findFirst(s, "/");
+							if (t == -1) {
+								println("Could not find SLOC for method <orig>/<methodName>, possibly a method inside a method..");
+								bad = true;
+								break;
+							}
+							// Skip past the first /
+							s = substring(s, t+1);
+						}
+					}
+					if (bad) {
+						// Possibly, we tried a method inside a method, so try next method in this file..
+						continue;
+					}
 				}
-				// Skip past the first /
-				s = substring(s, t+1);
+
+				// NOTE: in case of a method defined inside a method, we should disregard this.
+				try {
+					sloc = methodSLOC[classPath+"/<methodName>"];
+				} catch NoSuchKey(a): {
+					println("Found possible method inside another method: <methodName> - file: <javaFiles[i]> - key val: <classPath+methodName>");
+					//return [];
+					continue;
+				}
+
+				risks = calcCC(impl);
+				categories = categorizeCC(risks, sloc, categories);
 			}
 		}
-		if (bad) {
-			// Possibly, we tried a method inside a method, so try next method in this file..
-			continue;
-		}
 	}
-
-	// NOTE: in case of a method defined inside a method, we should disregard this.
-	try {
-		sloc = methodSLOC[classPath+"/<methodName>"];
-	} catch NoSuchKey(a): {
-		println("Found possible method inside another method: <methodName> - file: <javaFile> - key val: <classPath+methodName>");
-		//return [];
-		continue;
-	}
-
-	risks = calcCC(impl);
-	categories = categorizeCC(risks, sloc, categories);
-	
+		
 	return categories;
 }
 
-
 // Calculate unit complexity for a certain Eclipse Project.
-list[real] calcUnitComp(M3 m3Model, list[loc] javaFiles) {
+list[real] calcUnitComplexity(M3 m3Model, list[loc] javaFiles) {
 	int risks = 0;
 	int fileCount = size(javaFiles);
 	list[real] categories = [0.0, 0.0, 0.0, 0.0];
 	
 	// Map all methods to their respective SLOC. 
-	map[str, int] methodSLOC = calculateMethods(m3Model);
+	map[str, int] methodSLOC = mapMethods(m3Model);
 
-	for (int i <- [0 .. fileCount]) {
-		Declaration ast = createAstFromFile(javaFiles[i], true);
-
-		// Calculate per method the risk and add the amount of lines to corresponding category.
-		visit(ast) {
-			case \method(_, methodName, _, _, impl): { 
-				categories = visitMethod(methodName, javaFiles[i], impl, methodSLOC, categories);
-			}
-		}
-	}
+	// Visit the methods and calculate their risk profile per category.
+	categories = visitMethod(categories, methodSLOC, javaFiles, risks, fileCount);
 
 	// Calculate percentages per category.
 	totalLines = sum(categories);
