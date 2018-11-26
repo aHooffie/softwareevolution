@@ -55,6 +55,75 @@ list[str] trimSourceOld(str src) {
 	return ret;
 }
 
+// return <newInMLC, countThisLine> tuple
+// NOTE!! Does not handle when /* or */ are inside string quotes ("/*") ?!
+tuple[bool,bool] skipMultilineComments(str trimmed, bool inMLC) {
+	bool count_line = false;
+
+	if (!inMLC) {
+		if (startsWith(trimmed, "/*")) {
+			inMLC = true;
+		}
+		else if (contains(trimmed, "/*")) {
+			inMLC = true;
+			// this line did not start with /*, so it had some code, so count it
+			count_line = true;
+		}
+	}
+
+	// try to skip to */ if in a multilinecomment
+	if (inMLC) {
+		int ind;
+		str substr = trimmed;
+		while (true) {
+			ind = findFirst(substr, "*/");
+			//println("FindFirst substr: <substr>");
+			if (ind != -1 && ind == size(substr)-2) { // means that this line begins with /* and ends with a */ , with no code in the middle, so don't count this line
+				inMLC = false;
+				/*line_ended_with_end_of_multilinecomment = true;
+				break;*/
+				//return <inMLC, true>;
+				//count_line = true;
+				break;
+			}
+			else if (ind != -1) {
+				// ok, we found a */ that was not at the end of the string.
+				// Now check whether there is some code, or whether a new /* comment starts
+				// Skip past all/any whitespace
+				int j = ind+2; // jump past */
+				while (substr[j] == " " || substr[j] == "\t") {
+					j += 1;
+				}
+				substr = substring(substr, j);
+				int ind2 = findFirst(substr, "/*");
+				if (ind2 > 0 || ind2 == -1) {
+					// ok, means there was some code on this line, so count it!
+					//ret += trimmed;
+					//line_ended_with_end_of_multilinecomment = true;
+					count_line = true;
+					if (ind2 > 0)
+						inMLC = true;
+					break;
+				} else if (ind2 == 0) {
+					// It starts wtih a /* right away, so no code!
+					continue;
+				}
+			}
+			else { // ind == -1
+				// means we could not find any */
+				inMLC = true;
+				break;
+			}
+		}
+	} else {
+		// not in MLC
+		count_line = true;
+	}
+
+
+	return <inMLC,count_line>;
+}
+
 list[str] trimSource(str src) {
 	list[str] lines = split("\n", src);
 	// Iterate over each line of the method
@@ -69,65 +138,10 @@ list[str] trimSource(str src) {
 		if (size(trimmed) < 1)
 			continue;
 
-		if (!inMLC) {
-			if (startsWith(trimmed, "/*")) {
-				inMLC = true;
-			}
-			else if (contains(trimmed, "/*")) {
-				inMLC = true;
-				// this line did not start with /*, so it had some code, so count it
-				ret += trimmed;
-			}
-		}
-		// even if we just found out this line starts a MLC, check if it also ends on the same line.
-		bool line_ended_with_end_of_multilinecomment = false;
-		if (inMLC) {
-			int ind;
-			str substr = trimmed;
-			while (true) {
-				ind = findFirst(substr, "*/");
-				//println("FindFirst substr: <substr>");
-				if (ind != -1 && ind == size(substr)-2) { // means that this line begins with /* and ends with a */ , with no code in the middle, so don't count this line
-					inMLC = false;
-					line_ended_with_end_of_multilinecomment = true;
-					break;
-				}
-				else if (ind != -1) {
-					// ok, we found a */ that was not at the end of the string.
-					// Now check whether there is some code, or whether a new /* comment starts
-					// Skip past all/any whitespace
-					int j = ind+2; // jump past */
-					while (substr[j] == " " || substr[j] == "\t") {
-						j += 1;
-					}
-					substr = substring(substr, j);
-					int ind2 = findFirst(substr, "/*");
-					if (ind2 > 0 || ind2 == -1) {
-						// ok, means there was some code on this line, so count it!
-						ret += trimmed;
-						line_ended_with_end_of_multilinecomment = true;
-						if (ind2 > 0)
-							inMLC = true;
-						break;
-					} else if (ind2 == 0) {
-						// It starts wtih a /* right away, so no code!
-						continue;
-					}
-				}
-				else if (ind == -1) {
-					inMLC = true;
-					break;
-				}
-			}
-		}
-
-		if (line_ended_with_end_of_multilinecomment)
-			continue;
-
-		if (inMLC)
-			continue;
-
-		ret += trimmed;
+		bool countThis;
+		<inMLC,countThis> = skipMultilineComments(trimmed, inMLC);
+		if (countThis)
+			ret += trimmed;
 	}
 
 	return ret;
@@ -137,54 +151,6 @@ int unitsize (str src) {
 	return size(trimSource(src));
 }
 
-// Returns the number of source line codes of all Java-files in a folder.
-// Ignores lines with only comments or whitelines.
-// NOTE: assumes that all source files use "\n" line endings, not "\r\n" !
-int unitsizeOld (str src) {
-	lines = split("\n", src);
-
-	int nSrcLines = 0;
-	int nLines = size(lines);
-
-	// Trim all lines of trailing whitespace.
-	for (int j <- [0 .. nLines]) {
-		lines[j] = trim(lines[j]);
-	}
-
-	// Do not count comments && whitelines
-	for (int i <- [0 .. nLines]) {
-		lineLen = size(lines[i]);
-		countThisLine = true;
-
-		if (startsWith(lines[i], "//") || lineLen < 1) {
-			countThisLine = false;
-		}
-
-		if (startsWith(lines[i], "/*")) { // TO DO: Find /* in middle of code.
-			countThisLine = false;
-			skippedLines = skipMultilineComment(lines, i);
-			nSrcLines -= skippedLines;
-		}
-
-		if (countThisLine) {
-			nSrcLines += 1;
-		}
-	}
-
-	return nSrcLines;
-}
-
-// Count the lines of comment in a multiline comment.
-int skipMultilineComment(lines, index) {
-	lineCount = 0;
-
-	while (!startsWith(lines[index], "*/") && !endsWith(lines[index], "*/")) {
-		lineCount += 1;
-		index += 1;
-	}
-
-	return lineCount;
-}
 
 // Give rating to volume.
 int rateVolume(int kloc) {
