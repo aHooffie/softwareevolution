@@ -53,12 +53,8 @@ int calcCC(Statement impl) {
 
 // This turns a method location like |java+method:///simpletest/coolclass/looper()|
 // into the string "simpletest/coolclass/looper".
-// Or another input: |java+method:///org/hsqldb/ParserBase/readDateTimeIntervalLiteral(org.hsqldb.Session)|
-// --> org/hsqldb/ParserBase/readDateTimeIntervalLiteral
-str cleanMethodName(loc name) {
-	str s = "<name>";
-	str out = substring(s, size("|java+method:///"), findFirst(s, "("));
-	return out;
+str cleanMethodName(str name) {
+	return substring(name, 0, findFirst(name, "("));
 }
 
 // Build up a map of all the methods in the files, mapping them from javafile to SLOC.
@@ -69,7 +65,7 @@ map[str, int] mapMethods(M3 m3Model) {
 
 	for (int i <- [0 .. nMethods]) {
 		int methodSize = unitsize(readFile(methodsx[i]));
-		str cleanName = cleanMethodName(methodsx[i]);
+		str cleanName = cleanMethodName(methodsx[i].path[1..]);
 		methodSLOC[cleanName] = methodSize;
 	}
 
