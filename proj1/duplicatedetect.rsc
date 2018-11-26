@@ -15,21 +15,6 @@ import metrics;
 
 int debug = 0;
 
-
-// a simple hash function used to hash list of strings
-int customHash(list[str] lines) {
-	int hash = 7;
-	int nLines = size(lines);
-	for (i <- [0..nLines]) {
-		str line = lines[i];
-		int lineLen = size(line);
-		for (j <- [0..lineLen]) {
-			hash = hash*11 + charAt(line, j);
-		}
-	}
-	return hash;
-}
-
 int duplicationRank(real dupPct) {
 	if (dupPct <= 3.0)
 		return RATING_DOUBLEPLUS; // ++
@@ -63,10 +48,10 @@ real calcDuplication(M3 myModel) {
 
 	// In this first loop, we are computing hashes for every blocks of 6 lines of code.
 	// We use a very basic hash function to do this. We also map hashes to locations to quickly find collissions later
-	map[tuple[int,int],int] hashes = ();
+	map[tuple[int,int],list[str]] hashes = ();
 	int totalSLOC = 0;
 
-	map[int, list[tuple[int,int]]] hashToLocationsMap = ();
+	map[list[str], list[tuple[int,int]]] hashToLocationsMap = ();
 
 	for(int i <- [0 ..  nmethods]) {
 		if (debug > 1)
@@ -89,13 +74,12 @@ real calcDuplication(M3 myModel) {
 			// We need to be able to uniquely identify where this block of lines start
 			// i = method number, j = line number inside method
 			tuple[int,int] location = <i,j>;
-			int hash = customHash(collection);
-			hashes = hashes + (location: hash);
+			hashes = hashes + (location: collection);
 
-			if (hash in hashToLocationsMap) {
-				hashToLocationsMap[hash] = hashToLocationsMap[hash] + location;
+			if (collection in hashToLocationsMap) {
+				hashToLocationsMap[collection] = hashToLocationsMap[collection] + location;
 			} else {
-				hashToLocationsMap[hash] = [location];
+				hashToLocationsMap[collection] = [location];
 			}
 		}
 	}
@@ -106,7 +90,7 @@ real calcDuplication(M3 myModel) {
 		println("Made list of trimmed methods and hashes, duration: <t2-t1>");
 
 	// Important step: sort hashes so they appear chronologically e.g. blocks of code following each other in functions
-	list[tuple[tuple[int,int],int]] hashesList = sort([ <x, hashes[x]> | x <- hashes]);
+	list[tuple[tuple[int,int],list[str]]] hashesList = sort([ <x, hashes[x]> | x <- hashes]);
 	if (debug > 1)
 		println("Hashes sorted: <hashesList>");
 	int nHashes = size(hashesList);
