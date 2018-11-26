@@ -4,10 +4,18 @@ import metrics;
 import unitsize;
 import volume;
 import IO;
+import List;
 
 // Test suite for comment stripping utility.
 // Use :test in rascal console to run tests.
 
+
+// Basic example without comments
+test bool testCommentStrip0() {
+	str s = "int x = 3;\n" +
+		    "int y = 4;\n";
+	return unitsize(s) == 2;
+}
 
 // Basic multilinecomment example, should give 0 SLOC
 test bool testCommentStrip1() {
@@ -115,4 +123,68 @@ test bool testCommentStrip14() {
      "*/\n" +
      "public int x = 2\n";
 	return unitsize(s) == 1;
+}
+
+test bool testCommentStrip15() {
+	str s = "int x= 5;"; // NO NEWLINE
+	return unitsize(s) == 1;
+}
+
+test bool testCommentStrip16() {
+	str s = "// comment"; // NO NEWLINE
+	return unitsize(s) == 0;
+}
+
+test bool testCommentStrip17() {
+	str s = "/* /* comment */ int x = 3;"; // double /*
+	return unitsize(s) == 1;
+}
+
+test bool testCommentStrip18() {
+	str s = "/* comment\n" +
+		    "bla, /* comment */ int x = 3;"; // double /*
+	return unitsize(s) == 1;
+}
+
+test bool testCommentStrip19() {
+	str s = "/* comment\n" +
+		    "*/";
+	return unitsize(s) == 0;
+}
+
+test bool testCommentStrip20() {
+	str s = "/**\n" +
+			 "* Implementation of CHARACTER SET objects.\<p\>\n" +
+			 "*\n" +
+			 "* @author Fred Toussi (fredt@users dot sourceforge.net)\n" +
+			 "* @version 2.3.0\n" +
+			 "* @since 1.9.0\n" +
+			 "*/\n" +
+			"public class Charset implements SchemaObject {\n" +
+			"\n"+
+			"    public static final int[][] uppercaseLetters   = new int[][] {\n" +
+			"        {\n" +
+			"            \'A\', \'Z\'\n" +
+			"        }\n" +
+			"    };\n" +
+			"\n"+
+			"}\n";
+	stripped = trimSource(s);
+	/*
+	int n = size(stripped);
+	for (int i <- [0 .. n]) {
+		println("i<i> : <stripped[i]>");
+	}*/
+
+	//println("STRIPPED: <stripped>");
+	list[str] expected = ["public class Charset implements SchemaObject {","public static final int[][] uppercaseLetters   = new int[][] {","{","\'A\', \'Z\'","}","};","}"];
+	return stripped == expected;
+}
+
+// evil case: /* inside string quotes
+test bool testCommentStrip21() {
+	str s = "String s = \"hehe/*\"\n" +
+			"int x = 5;\n" +
+		    "/* comment */ int y = 3;\n";
+	return unitsize(s) == 3;
 }
