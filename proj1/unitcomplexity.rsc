@@ -66,68 +66,97 @@ map[str, int] mapMethods(M3 m3Model) {
 	map[str, int] methodSLOC = ();
 	methodsx = toList(methods(m3Model));
 	int nMethods = size(methodsx);
-	
+
 	for (int i <- [0 .. nMethods]) {
 		int methodSize = unitsize(readFile(methodsx[i]));
 		str cleanName = cleanMethodName(methodsx[i]);
 		methodSLOC[cleanName] = methodSize;
 	}
-	
+
 	return methodSLOC;
 }
 
-// I don't quite understand what you are doing here..  
-// Possible to split this somehow still? 
+
+/* Returns a tuple <foundClassPath, classPath>
+   This method is calle for each Java file in the Eclipse project.
+   Given a method name, a java filename and our map that maps from Java method to SLOC, try to construct the
+   filepath which exists in the map. The reason we have to do this is a bit complicated. Basically,
+   when we are getting a list of java files, they may not have the same "base path" as when we are getting a list of methods.
+   So we have to try to match by starting with the full path and cutting off parts of it until we find a match.
+
+   Example inputs:
+   		javaFileName : |project://myProject/src/myProject/classOne.java|
+        methodName   : helloWorld
+        methodSLOC   :
+            ("myProject/classOne/helloWorld":19,
+	         "myProject/classOne/main":37,
+	         "myProject/classTwo/coolMethod":11,
+	         "myProject/classTwo/bestMethod":15)
+
+   In this case, notice that the javaFileName has a longer base path than the paths in methodSLOC.
+   So we need to find the right substring of javaFileName which exists in the map.
+   So start at the longest path with the original javaFileName: "myProject/src/myProject/classOne/helloWorld",
+   then cut off one part at a time until we find a match in methodSLOC.
+   In this case, we want to return <true, myProject/classOne>
+   because "myProject/classOne" is the base path in the methodSLOC.
+   Then, we can use this path for other methods in the same file.
+*/
+tuple[bool, str] getClassPath(str javaFileName, str methodName, map[str, int] methodSLOC) {
+	str orig = javaFileName;
+	int ind = size("project://");
+	int endInd = findFirst(orig, ".java|");
+	str s = substring(orig, ind, endInd);
+	str classPath = "?";
+	bool foundClassPath = false;
+
+	while (true) {
+		str toTry = s+"/<methodName>";
+		try {
+			// see if this path is in the map, statement below with raise exception if it doesn't exist
+			methodSLOC[toTry];
+			classPath = s; // ok, it worked
+			foundClassPath = true;
+			break;
+		} catch NoSuchKey(a): {
+			t = findFirst(s, "/");
+			if (t == -1) {
+				println("Could not find SLOC for method <orig>/<methodName>, possibly a method inside a method..");
+				break;
+			}
+			// Skip past the first / and try next guess
+			s = substring(s, t+1);
+		}
+	}
+
+	return <foundClassPath, classPath>;
+}
+
+
+// I don't quite understand what you are doing here..
+// Possible to split this somehow still?
 list[real] visitMethod(list[real] categories, map[str, int] methodSLOC, list[loc] javaFiles, int risks, int fileCount) {
 	for (int i <- [0 .. fileCount]) {
 		Declaration ast = createAstFromFile(javaFiles[i], true);
-		//str classPath = getClassPath(javaFiles[i]);
 		str classPath = "?";
+		bool foundClassPath = false;
 
 		// Calculate per method the risk and add the amount of lines to corresponding category.
 		visit(ast) {
 			case \method(_, methodName, _, _, impl): {
-				int sloc = 0;
-				// This is incredibly hacky and ugly, but the whole situation is problematic because we don't know where the path of a source file begins.. bla
-				if (classPath == "?") {
-					//println("!!!!!!!!!!!!\nFinding class path!!!!!");
-					orig = "<javaFiles[i]>";
-					ind = size("project://");
-					endInd = findFirst(orig, ".java|");
-					s = substring(orig, ind, endInd);
-
-					bool bad = false;
-					while (true) {
-						str toTry = s+"/<methodName>";
-						//println("Trying <toTry> ...");
-						try {
-							sloc = methodSLOC[toTry];
-							//println("Ok, it worked: <s>");
-							classPath = s;
-							break;
-						} catch NoSuchKey(a): {
-							t = findFirst(s, "/");
-							if (t == -1) {
-								println("Could not find SLOC for method <orig>/<methodName>, possibly a method inside a method..");
-								bad = true;
-								break;
-							}
-							// Skip past the first /
-							s = substring(s, t+1);
-						}
-					}
-					if (bad) {
-						// Possibly, we tried a method inside a method, so try next method in this file..
+				if (!foundClassPath) {
+					<foundClassPath,classPath> = getClassPath("<javaFiles[i]>", methodName, methodSLOC);
+					if (!foundClassPath) {
+						// it seems like we tried a method inside a method, so try next method in this file
 						continue;
 					}
 				}
 
-				// NOTE: in case of a method defined inside a method, we should disregard this case and not count it because it will be counted by the parent method.
+				// in case of a method defined inside a method, we should disregard this case and not count it because it will be counted by the parent method.
+				int sloc = 0;
 				try {
 					sloc = methodSLOC[classPath+"/<methodName>"];
 				} catch NoSuchKey(a): {
 					println("Found possible method inside another method: <methodName> - file: <javaFiles[i]> - key val: <classPath+methodName>");
-					//return [];
 					continue;
 				}
 
@@ -136,7 +165,7 @@ list[real] visitMethod(list[real] categories, map[str, int] methodSLOC, list[loc
 			}
 		}
 	}
-		
+
 	return categories;
 }
 
@@ -145,8 +174,8 @@ list[real] calcUnitComplexity(M3 m3Model, list[loc] javaFiles) {
 	int risks = 0;
 	int fileCount = size(javaFiles);
 	list[real] categories = [0.0, 0.0, 0.0, 0.0];
-	
-	// Map all methods to their respective SLOC. 
+
+	// Map all methods to their respective SLOC.
 	map[str, int] methodSLOC = mapMethods(m3Model);
 
 	// Visit the methods and calculate their risk profile per category.
