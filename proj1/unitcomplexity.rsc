@@ -111,7 +111,7 @@ list[real] calcUnitComp(M3 m3Model, list[loc] javaFiles) {
 						str toTry = s+"/<methodName>";
 						//println("Trying <toTry> ...");
 						try {
-							sloc = methodSLOC[s+"/<methodName>"];
+							sloc = methodSLOC[toTry];
 							//println("Ok, it worked: <s>");
 							classPath = s;
 							break;
@@ -132,7 +132,7 @@ list[real] calcUnitComp(M3 m3Model, list[loc] javaFiles) {
 					}
 				}
 
-				// NOTE: in case of a method defined inside a method, we should disregard this.
+				// NOTE: in case of a method defined inside a method, we should disregard this case and not count it because it will be counted by the parent method.
 				try {
 					sloc = methodSLOC[classPath+"/<methodName>"];
 				} catch NoSuchKey(a): {
