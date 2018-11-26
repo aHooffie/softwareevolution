@@ -4,12 +4,13 @@ import IO;
 import List;
 import Set;
 import String;
-import util::FileSystem;
 
 import lang::java::m3::Core;
 import lang::java::jdt::m3::Core;
-import volume;
+import util::FileSystem;
+
 import metrics;
+import volume;
 
 // Add the amount of lines to the right category of method sizes.
 list[real] calcUnitSize(int nlines, list[real] categories) {
@@ -26,43 +27,24 @@ list[real] calcUnitSize(int nlines, list[real] categories) {
 	return categories;
 }
 
-// Max. percentages per rating (found in reader).
-// ++ = [3] = 0, [2] = 0, [1] <= 25%, [0] >= 75%
-// + = [3] = 0, [2] = 5, [1] = 30%, [0] >
-// o = [3] = 0, [2] = 10, [1] = 40, [0]>
-// - = [3] = 5, [2] = 15, [1] = 50, [0]>
-// -- = REST
+// Method to rate the unit size based on the risk profile percentages.
+// Found on p. 6 of https://www.softwareimprovementgroup.com/wp-content/uploads/2018/02/A-Practical-Model-for-Measuring-Maintainability.pdf
+int rateUnit(list[real] categories) {
+	if (categories[1] <= 25.0 && categories[2] < 0.001 && categories[3] < 0.001)
+		return RATING_DOUBLEPLUS;
 
-// Ugly as fuck. Works for now.
-int rateUnitSize(list[real] categories) {
-	if (categories[3] == 0 && categories[2] == 0) {
-		if (categories[1] <= 25) {
-			return RATING_DOUBLEPLUS;
-		}
-	}
+	if (categories[1] <= 30.0 && categories[2] <= 5.0 && categories[3] < 0.001)
+		return RATING_PLUS;
 
-	if (categories[3] == 0 && categories[2] <= 5) {
-		if (categories[1] <= 30) {
-			return RATING_PLUS;
-		}
-	}
+	if (categories[1] <= 40.0 && categories[2] <= 10.0 && categories[3] <= 5.0)
+		return RATING_O;
 
-	if (categories[3] == 0 && categories[2] <= 10) {
-		if (categories[1] <= 40) {
-			return RATING_O;
-		}
-	}
-
-	if (categories[3] <= 5 && categories[2] <= 15) {
-		if (categories[1] <= 50) {
-			return RATING_MINUS;
-		}
-	}
+	if (categories[1] <= 50.0 && categories[2] <= 15.0 && categories[3] <= 5.0)
+		return RATING_MINUS;
 
 	return RATING_DOUBLEMINUS;
 }
 
-// duplicates: 967.
 list[real] calcUnitSize(M3 myModel) {
 	list[real] categories = [0.0, 0.0, 0.0, 0.0];
 
