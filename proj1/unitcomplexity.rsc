@@ -68,7 +68,6 @@ list[real] calcUnitComp(M3 m3Model, list[loc] javaFiles) {
 				categories = categorizeUnitRisk(risks, sloc, categories);
 			}
 		}
-
 	}
 
 	// Calculate percentages per category.

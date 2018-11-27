@@ -13,6 +13,7 @@ import util::Resources;
 
 import duplication;
 import unitcomplexity;
+import unitinterfacing;
 import unitsize;
 import volume;
 
@@ -77,10 +78,14 @@ void main(loc project) {
 	list[real] sizePct = calcUnitSize(m3Model);
 	int sizeRating = rateUnit(sizePct);
 
-	println("Measuring unitComp.");
+	println("Measuring unitComplexity.");
 	list[real] complexityPct = calcUnitComp(m3Model, javaFiles);
 	int complexityRating =  rateUnit(complexityPct);
-
+	
+	println("Measuring unitInterfacing.");
+	list[real] interfacingPct = calcUnitInterfacing(javaFiles);
+	int interfaceRating = rateUnit(interfacingPct);
+	
 	println("Measuring duplication.");
 	int duplicateLines = calcDuplication(javaFiles);
 	real duplicationPct = toReal(duplicateLines * 100) / toReal(volume);
@@ -89,21 +94,28 @@ void main(loc project) {
 	// Print all results.
 	println("\n============ Metrics ============");
 	println("Volume: <volume> lines of code.");
-	println("Volume rating: <giveRating(volumeRating)>.");
+	println("Volume rating: <giveRating(volumeRating)>.\n");
 
 	println("Unit size risk profile:");
 	println("    \<= 15 lines of code:   <sizePct[0]> %.");
 	println("    \<= 30 lines of code:   <sizePct[1]> %.");
 	println("    \<= 60 lines of code:   <sizePct[2]> %.");
 	println("    \>  60 lines of code:   <sizePct[3]> %.");
-	println("Unit size rating: <giveRating(sizeRating)>.");
+	println("Unit size rating: <giveRating(sizeRating)>.\n");
 
 	println("Unit complexity risk profile:");
 	println("   simple,       without much risk (CC 1-10):     <complexityPct[0]> %.");
 	println("   more complex, moderate risk     (CC 11-20):    <complexityPct[1]> %.");
 	println("   complex,      high risk         (CC 21-50):    <complexityPct[2]> %.");
 	println("   untestable,   very high risk    (CC \>50):      <complexityPct[3]> %.");
-	println("Unit complexity rating: <giveRating(complexityRating)>.");
+	println("Unit complexity rating: <giveRating(complexityRating)>.\n");
+	
+	println("Unit interfacing risk profile:");
+	println("    \< 3 parameters:   <interfacingPct[0]> %.");
+	println("    \< 5 parameters:   <interfacingPct[1]> %.");
+	println("    \< 7 parameters:   <interfacingPct[2]> %.");
+	println("    \> 7 parameters:   <interfacingPct[3]> %.");
+	println("Unit interfacing rating: <giveRating(interfaceRating)>.\n");
 
 	println("Duplication percentage: <duplicationPct> %.");
 	println("Duplication rank: <giveRating(duplicationRating)>.");
