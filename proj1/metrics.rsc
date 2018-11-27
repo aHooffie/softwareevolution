@@ -82,7 +82,8 @@ void main(loc project) {
 	int complexityRating =  rateUnit(complexityPct);
 
 	println("Measuring duplication.");
-	real duplicationPct = calcDuplication(m3Model);
+	int duplicateLines = calcDuplication(javaFiles);
+	real duplicationPct = toReal(duplicateLines * 100) / toReal(volume);
 	int duplicationRating = rateDuplication(duplicationPct);
 
 	// Print all results.

@@ -2,171 +2,75 @@ module duplication
 
 import IO;
 import List;
-import Set;
+import Map;
+import String;
+
 import lang::java::m3::Core;
 import lang::java::jdt::m3::Core;
-import String;
 import util::Resources;
 import util::FileSystem;
 import util::Math;
-import volume;
-import DateTime;
-import metrics;
 
-int debug = 0;
+import metrics;
+import volume;
 
 int rateDuplication(real dupPct) {
-	if (dupPct <= 3.0)
-		return RATING_DOUBLEPLUS; // ++
-	if (dupPct <= 5.0)
-		return RATING_PLUS; // +
-	if (dupPct <= 10.0)
-		return RATING_O; // o
-	if (dupPct <= 20.0)
-		return RATING_MINUS; // -
-
-	return RATING_DOUBLEMINUS; // --
+	if (dupPct <= 3.0) {
+		return RATING_DOUBLEPLUS;
+	} else if (dupPct <= 5.0) {
+		return RATING_PLUS;
+	} else if (dupPct <= 10.0) {
+		return RATING_O;
+	} else if (dupPct <= 20.0) {
+		return RATING_MINUS;
+	} else {
+		return RATING_DOUBLEMINUS;
+	}	
 }
 
-// Given a m3 java model, find all Java methods, and find percentage of duplicate code
-real calcDuplication(M3 myModel) {
-	t1 = now(); // timing
+// Check how many lines should be added to dupLines (either 1 or 6) - e.g. is it part of a bigger block of duplication.
+int checkCodeBlock(list[tuple[int file, int line]] locationDuplicates, tuple[int file, int line] currentLocation) {
+	int nLines;
+	
+	tuple[int file, int line] previous = <currentLocation.file, currentLocation.line - 1>;	
+	if (previous in locationDuplicates) {
+		nLines = 1;
+	} else  {
+		nLines = 6;
+	}
+	
+	return nLines;
+}
 
-	if (debug > 0)
-		println("========= calcDuplication() =========");
-
-
-	list[loc] methodsx = toList(methods(myModel));
-	int nmethods = size(methodsx);
-	if (debug > 0)
-		println("Number of methods: <nmethods>");
-
-
-	// Code duplication detection: Iterate through EVERY combination of 6 consecutive src lines and
-	// compute a hash and store it. Then count number of identical hashes but remember to only count
-	// 1 instance of duplicates as 1, not 2..
-
-	// In this first loop, we are computing hashes for every blocks of 6 lines of code.
-	// We use a very basic hash function to do this. We also map hashes to locations to quickly find collissions later
-	map[tuple[int,int],list[str]] hashes = ();
-	int totalSLOC = 0;
-
-	map[list[str], list[tuple[int,int]]] hashToLocationsMap = ();
-
-	for(int i <- [0 ..  nmethods]) {
-		if (debug > 1)
-			println("i:<i>, methodName: <methodsx[i]>");
-		str src = readFile(methodsx[i]);
-		list[str] trimmed = trimSource(src); // returns a list of trimmed lines
-		int numLines = size(trimmed);
-
-		if (debug > 1) {
-			println("Num lines: <numLines>");
-		}
-
-		totalSLOC += numLines;
-		if (numLines < 6)
-			continue; // we require 6 lines for duplicate blocks
-
-		for (int j <- [0 .. numLines-6]) {
-			// collect 6 lines from index j
-			list[str] collection = trimmed[j..j+6];
-			// We need to be able to uniquely identify where this block of lines start
-			// i = method number, j = line number inside method
-			tuple[int,int] location = <i,j>;
-			hashes = hashes + (location: collection);
-
-			if (collection in hashToLocationsMap) {
-				hashToLocationsMap[collection] = hashToLocationsMap[collection] + location;
+int calcDuplication(list[loc] javaFiles) {
+	// Filter all useless lines out of the javaFiles & all files < 6 lines.	
+	list[list[str]] trimmedFiles = [ trimSource(readFile(file)) | file <- javaFiles ];
+	list[list[str]] filteredFiles = [ file | file <- trimmedFiles, size(file) > 6];
+	
+	int nFiles = size(filteredFiles);
+	int dupLines = 0;
+	map[str, tuple[int file, int line]] hashes = ();
+	list[tuple[int file, int line]] locationDuplicates = []; 				
+	
+	
+	// Loop over all files. Map every 6 lines to their location.
+	for (int i <- [0 .. nFiles]) {
+		int nLines = size(filteredFiles[i]);
+	
+		for (int j <- [0 .. nLines - 6]) {
+			str currentSelection = toString(filteredFiles[i][j .. j + 6]);
+			tuple[int file, int line] currentLocation = <i,j>;			
+			
+			// Check if the current 6 lines have already occurred before.
+			if (currentSelection in hashes) {
+				locationDuplicates = locationDuplicates + currentLocation;
+				dupLines += checkCodeBlock(locationDuplicates, currentLocation);
 			} else {
-				hashToLocationsMap[collection] = [location];
+				hashes[currentSelection] = currentLocation;
 			}
 		}
 	}
 
-	t2 = now();
-
-	if (debug > 0)
-		println("Made list of trimmed methods and hashes, duration: <t2-t1>");
-
-	// Important step: sort hashes so they appear chronologically e.g. blocks of code following each other in functions
-	list[tuple[tuple[int,int],list[str]]] hashesList = sort([ <x, hashes[x]> | x <- hashes]);
-	if (debug > 1)
-		println("Hashes sorted: <hashesList>");
-	int nHashes = size(hashesList);
-
-	map[tuple[int,int],list[tuple[int,int]]] dupLocs = ();
-	map[tuple[int,int], bool] countedLocs = ();
-
-	int nDupeLines = 0;
-	tuple[int,int] prevMatch = <-1,-1>;
-
-	for (int i <- [0 .. nHashes]) {
-		if (debug > 0 && i % 1000 == 0)
-			println("i<i> / <nHashes>");
-
-		hi = hashesList[i];
-		hi_0 = hi[0]; // location
-		otherLocsSameHash = sort(hashToLocationsMap[hi[1]]);
-
-		int nCollissions = size(otherLocsSameHash); // includes this current entry
-		for (int j <- [0 .. nCollissions]) {
-			hj_0 = otherLocsSameHash[j];
-			if (hj_0 == hi_0) { // it's the same location
-				//println("SKipped <hj_0> , <hi_0>");
-				continue;
-			}
-
-			if (hj_0 in dupLocs) {
-				if (hi_0 in dupLocs[hj_0]) {
-					if (debug > 1)
-						println("1 SKIPPING Loc <hi_0> match at <hj_0>");
-					continue;
-				}
-			}
-
-			if (hj_0 in countedLocs) {
-				//println("2x! SKIPPING Loc <hi_0> match at <hj_0>");
-				continue;
-			}
-
-			// To prevent counting this pair of duplicate lines again, we should save the locations
-			// in some data structure
-			if (hi_0 in dupLocs) {
-				dupLocs[hi_0] = dupLocs[hi_0] + [hj_0];
-			} else {
-				dupLocs[hi_0] = [hj_0];
-				//println("ADDED MORE OMG");
-			}
-
-			int toAdd = 6;
-
-			// NOTE: If previous line had a match, this means we should only add 1 extra line
-			// check for overlap
-			if (hj_0[1] == prevMatch[1]+1 && hj_0[0] == prevMatch[0] ) {
-				toAdd = 1;
-				//println("2NICE CASE TOADD1");
-			}
-			// Note: not sure why this case is necessary? First line in first method case?
-			else if (hi_0[0] == hj_0[0]) { // same method
-				int diff = (hj_0[1] - hi_0[1]);
-				if (diff > 0 && diff <= 6) {
-					//println("o!!!!!! k CASE TOADD1 diff: <diff>");
-					toAdd = 1;
-				}
-			}
-
-			nDupeLines += toAdd;
-			countedLocs[hj_0] = true;
-			prevMatch = hj_0;
-			if (debug > 1)
-				println("meth1 <hashesList[i][0][0]> i:<i>, Loc <hashesList[i][0]> match at <hj_0> toAdd=<toAdd>  meth2: <hj_0[0]>");
-		}
-	}
-
-	real pct = toReal(nDupeLines)/toReal(totalSLOC) * 100.0;
-	dur = now() - t1;
-	println("Duration taken by duplication code: <dur> - SLOC: <totalSLOC> - Duplicate lines: <nDupeLines> - pct: <pct>");
-	return pct;
+	return dupLines;
 }
 
