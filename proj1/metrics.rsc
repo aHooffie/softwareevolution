@@ -63,22 +63,25 @@ str giveRating(int rating) {
 // Example invocation: main(|project://smallsql|);
 void main(loc project) {
 	t1 = now();
-	println("Building M3 model for project <project> and getting list of Java files..");
+	println("Building M3 model for project <project>.");
 	M3 m3Model = createM3FromEclipseProject(project);
+	println("Done building.");
 	list[loc] javaFiles = [ f | f <- find(project, "java"), isFile(f) ];
-
-	//testSourceTrimmer(javaFiles);
-
+	println("Found the files.");
+	
+	println("Measuring volume.");
 	int volume = calcVolume(javaFiles);
 	int volumeRating = rateVolume(volume / 1000);
 
+	println("Measuring unitSize.");
 	list[real] unitSizePct = calcUnitSize(m3Model);
 	int unitSize = rateUnit(unitSizePct);
 
-	list[real] unitComplexityPct = calcUnitComplexity(m3Model, javaFiles);
+	println("Measuring unitComp.");
+	list[real] unitComplexityPct = calcUnitComp(m3Model, javaFiles);
 	int unitComplexity =  rateUnit(unitComplexityPct);
 
-	//println("Calculating duplication percentage..");
+	println("Measuring duplication.");
 	real dupPct = calcDuplication(m3Model);
 	int dupRank = duplicationRank(dupPct);
 
@@ -101,7 +104,7 @@ void main(loc project) {
 	println("   untestable,   very high risk    (CC \>50):      <unitComplexityPct[3]> %.");
 	println("Unit complexity rating: <giveRating(unitComplexity)>.");
 
-	println("Duplication percentage: <dupPct>.");
+	println("Duplication percentage: <dupPct> %.");
 	println("Duplication rank: <giveRating(dupRank)>.");
 
 	int analysability = round(toReal(volumeRating + dupRank + unitSize) / 3.0);
