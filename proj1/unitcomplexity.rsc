@@ -51,36 +51,19 @@ int calcCC(Statement impl) {
 	return rating;
 }
 
-// This turns a method location like |java+method:///simpletest/coolclass/looper()|
-// into the string "simpletest/coolclass/looper".
-str cleanMethodName(str name) {
-	return substring(name, 0, findFirst(name, "("));
-}
-
 // Calculate unit complexity for a certain Eclipse Project.
 list[real] calcUnitComp(M3 m3Model, list[loc] javaFiles) {
 	list[real] categories = [0.0, 0.0, 0.0, 0.0];
-	int risks = 0;
+	int risks, sloc = 0;
 	int fileCount = size(javaFiles);
 
-	// Build up a map, mapping from javafile to SLOC.
-	methodsx = toList(methods(m3Model));
-	int nMethods = size(methodsx);
-	map[str,int] methodSLOC = ();
-	for (int i <- [0 .. nMethods]) {
-		int methodSize = unitsize(readFile(methodsx[i]));
-		str cleanName = cleanMethodName(methodsx[i].path[1..]);
-		methodSLOC[cleanName] = methodSize;
-	}
-
 	for (int i <- [0 .. fileCount]) {
-		// Create an AST of each file.
 		Declaration ast = createAstFromFile(javaFiles[i], true);
 
 		// Calculate per method the risk and add the amount of lines to corresponding category.
 		visit(ast) {
 			case \method(_, methodName, _, _, impl): {
-				int sloc = size(readFileLines(impl.src));
+				sloc = size(readFileLines(impl.src));
 				risks = calcCC(impl);
 				categories = categorizeUnitRisk(risks, sloc, categories);
 			}
