@@ -11,7 +11,7 @@ import util::FileSystem;
 import util::Math;
 import util::Resources;
 
-import duplicatedetect;
+import duplication;
 import unitcomplexity;
 import unitsize;
 import volume;
@@ -65,7 +65,7 @@ void main(loc project) {
 	t1 = now();
 	println("Building M3 model for project <project>.");
 	M3 m3Model = createM3FromEclipseProject(project);
-	println("Done building.");
+	println("Filtering Java files.");
 	list[loc] javaFiles = [ f | f <- find(project, "java"), isFile(f) ];
 	println("Found the files.");
 	
@@ -74,16 +74,16 @@ void main(loc project) {
 	int volumeRating = rateVolume(volume / 1000);
 
 	println("Measuring unitSize.");
-	list[real] unitSizePct = calcUnitSize(m3Model);
-	int unitSize = rateUnit(unitSizePct);
+	list[real] sizePct = calcUnitSize(m3Model);
+	int sizeRating = rateUnit(sizePct);
 
 	println("Measuring unitComp.");
-	list[real] unitComplexityPct = calcUnitComp(m3Model, javaFiles);
-	int unitComplexity =  rateUnit(unitComplexityPct);
+	list[real] complexityPct = calcUnitComp(m3Model, javaFiles);
+	int complexityRating =  rateUnit(complexityPct);
 
 	println("Measuring duplication.");
-	real dupPct = calcDuplication(m3Model);
-	int dupRank = duplicationRank(dupPct);
+	real duplicationPct = calcDuplication(m3Model);
+	int duplicationRating = rateDuplication(duplicationPct);
 
 	// Print all results.
 	println("\n============ Metrics ============");
@@ -91,26 +91,26 @@ void main(loc project) {
 	println("Volume rating: <giveRating(volumeRating)>.");
 
 	println("Unit size risk profile:");
-	println("    \<= 15 lines of code:   <unitSizePct[0]> %.");
-	println("    \<= 30 lines of code:   <unitSizePct[1]> %.");
-	println("    \<= 60 lines of code:   <unitSizePct[2]> %.");
-	println("    \>  60 lines of code:   <unitSizePct[3]> %.");
-	println("Unit size rating: <giveRating(unitSize)>.");
+	println("    \<= 15 lines of code:   <sizePct[0]> %.");
+	println("    \<= 30 lines of code:   <sizePct[1]> %.");
+	println("    \<= 60 lines of code:   <sizePct[2]> %.");
+	println("    \>  60 lines of code:   <sizePct[3]> %.");
+	println("Unit size rating: <giveRating(sizeRating)>.");
 
 	println("Unit complexity risk profile:");
-	println("   simple,       without much risk (CC 1-10):     <unitComplexityPct[0]> %.");
-	println("   more complex, moderate risk     (CC 11-20):    <unitComplexityPct[1]> %.");
-	println("   complex,      high risk         (CC 21-50):    <unitComplexityPct[2]> %.");
-	println("   untestable,   very high risk    (CC \>50):      <unitComplexityPct[3]> %.");
-	println("Unit complexity rating: <giveRating(unitComplexity)>.");
+	println("   simple,       without much risk (CC 1-10):     <complexityPct[0]> %.");
+	println("   more complex, moderate risk     (CC 11-20):    <complexityPct[1]> %.");
+	println("   complex,      high risk         (CC 21-50):    <complexityPct[2]> %.");
+	println("   untestable,   very high risk    (CC \>50):      <complexityPct[3]> %.");
+	println("Unit complexity rating: <giveRating(complexityRating)>.");
 
-	println("Duplication percentage: <dupPct> %.");
-	println("Duplication rank: <giveRating(dupRank)>.");
+	println("Duplication percentage: <duplicationPct> %.");
+	println("Duplication rank: <giveRating(duplicationRating)>.");
 
-	int analysability = round(toReal(volumeRating + dupRank + unitSize) / 3.0);
-	int changeability = round(toReal(unitComplexity + dupRank) / 2.0);
-	int testability = round(toReal(unitComplexity + unitSize) / 2.0);
-	int maintainability = round(toReal(volumeRating  + unitSize + unitComplexity + dupRank) / 4.0);
+	int analysability = round(toReal(volumeRating + duplicationRating + sizeRating) / 3.0);
+	int changeability = round(toReal(complexityRating + duplicationRating) / 2.0);
+	int testability = round(toReal(complexityRating + sizeRating) / 2.0);
+	int maintainability = round(toReal(volumeRating + sizeRating + complexityRating + duplicationRating) / 4.0);
 
 	println("\n============ Scores ============");
 	println("Analysability rating:      <giveRating(analysability)> (volume + duplication + unitsize).");

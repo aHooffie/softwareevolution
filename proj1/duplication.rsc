@@ -1,4 +1,4 @@
-module duplicatedetect
+module duplication
 
 import IO;
 import List;
@@ -15,7 +15,7 @@ import metrics;
 
 int debug = 0;
 
-int duplicationRank(real dupPct) {
+int rateDuplication(real dupPct) {
 	if (dupPct <= 3.0)
 		return RATING_DOUBLEPLUS; // ++
 	if (dupPct <= 5.0)
