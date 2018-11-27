@@ -71,15 +71,7 @@ list[str] trimSource(str src) {
 
 // Compute all lines of code in .java files.
 int calcVolume(list[loc] javaFiles) {
-	int fileCount = size(javaFiles);
-	int volume = 0;
-
-	for (int i <- [0 ..  fileCount]) {
-		src = readFile(javaFiles[i]);
-		volume += unitsize(src);
-	}
-
-	return volume;
+	return sum([ unitsize(readFile(file)) | file <- javaFiles ]);
 }
 
 
